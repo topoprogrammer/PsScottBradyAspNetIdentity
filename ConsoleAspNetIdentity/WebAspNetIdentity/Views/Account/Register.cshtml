@@ -1,0 +1,26 @@
+﻿@model WebAspNetIdentity.Controllers.RegisterViewModel
+
+@{
+    ViewBag.Title = "Register";
+}
+
+<h2>Register</h2>
+<hr />
+@using (Html.BeginForm("Register", "Account", FormMethod.Post))
+{
+    @Html.ValidationSummary()
+    @Html.LabelFor(h => h.UserName) @Html.TextBoxFor(h => h.UserName)
+    <br />
+
+    //For extended user
+    @*@Html.LabelFor(h => h.FullName) @Html.TextBoxFor(h => h.FullName)
+        <br />
+        @Html.LabelFor(h => h.AddressLine) @Html.TextBoxFor(h => h.AddressLine)
+        <br />
+        @Html.LabelFor(h => h.Country) @Html.TextBoxFor(h => h.Country)
+        <br />*@
+
+    @Html.LabelFor(h => h.Password) @Html.PasswordFor(h => h.Password)
+    <br />
+    <input class="btn" type="submit" value="Register" />
+}

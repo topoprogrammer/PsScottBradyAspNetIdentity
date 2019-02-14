@@ -1,0 +1,4 @@
+﻿install-package	Microsoft.AspNet.Identity.Owin
+install-package Microsoft.AspNet.Identity.Entityframework
+install-package Microsoft.Owin.Host.SystemWeb
+install-package Microsoft.Owin.Security.Cookies
