@@ -1,0 +1,15 @@
+﻿@model WebAspNetIdentity.Controllers.ChoosePoviderViewModel
+
+@{
+    ViewBag.Title = "ChooseProvider";
+}
+
+<h1>Choose Provider</h1>
+<hr />
+@using (Html.BeginForm("ChooseProvider", "Account", FormMethod.Post))
+{
+    <p>Provider: @Html.DropDownListFor(h => h.ChosenProvider, Model.Providers.Select(h => new SelectListItem { Value = h, Text = h }).ToList())</p>
+    <input class="btn" value="Submit" type="submit" />
+}
+
+

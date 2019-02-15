@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Xml;
 
 namespace WebAspNetIdentity.Controllers
 {
@@ -38,16 +39,16 @@ namespace WebAspNetIdentity.Controllers
             // email the user informing they already have an account and they don't need
             // to register again.
             //*****************************************************************************
-            var identityUser = await UserManager.FindByNameAsync(model.UserName);
-            if (identityUser != null)
+            var user = await UserManager.FindByNameAsync(model.UserName);
+            if (user != null)
             {
                 return RedirectToAction("Index", "Home");
             }
             //*****************************************************************************
 
 
-
-            var identityResult = await UserManager.CreateAsync(new IdentityUser(model.UserName), model.Password);
+            var identityUser = new IdentityUser(model.UserName) { Email = model.UserName };
+            var identityResult = await UserManager.CreateAsync(identityUser, model.Password);
             //For extendend user
             //********************************************************************************************
             //var user = new ExtendedUser
@@ -68,12 +69,29 @@ namespace WebAspNetIdentity.Controllers
 
             if (identityResult.Succeeded)
             {
+                var token = await UserManager.GenerateEmailConfirmationTokenAsync(identityUser.Id);
+                var confirmUrl = Url.Action("ConfirmEmail", "Account", new { userId = identityUser.Id, token = token }, Request.Url.Scheme);
+                await UserManager.SendEmailAsync(identityUser.Id, "Email Confirmation", $"Use link to confirm email: {confirmUrl}");
+
+
                 return RedirectToAction("Index", "Home");
             }
 
             ModelState.AddModelError("", identityResult.Errors.FirstOrDefault());
 
             return View(model);
+        }
+
+        public async Task<ActionResult> ConfirmEmail(string userid, string token)
+        {
+            var identityResult = await UserManager.ConfirmEmailAsync(userid, token);
+
+            if (!identityResult.Succeeded)
+            {
+                return View("Error");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
         public ActionResult Login()
@@ -90,11 +108,52 @@ namespace WebAspNetIdentity.Controllers
             {
                 case SignInStatus.Success:
                     return RedirectToAction("Index", "Home");
+                case SignInStatus.RequiresVerification:
+                    //Create a user with phone number, phone number confirmed, two factor enabled.
+                    //********************************************************************************************
+                    return RedirectToAction("ChooseProvider");
+                //********************************************************************************************
                 default:
                     ModelState.AddModelError("", "Invalid Credentials");
                     return View(model);
             }
-
         }
+
+        public async Task<ActionResult> ChooseProvider()
+        {
+            var userId = await SignInManager.GetVerifiedUserIdAsync();
+            var providers = await UserManager.GetValidTwoFactorProvidersAsync(userId);
+
+            return View(new ChoosePoviderViewModel { Providers = providers.ToList() });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> ChooseProvider(ChoosePoviderViewModel model)
+        {
+            await SignInManager.SendTwoFactorCodeAsync(model.ChosenProvider);
+            return RedirectToAction("TwoFactor", new { provider = model.ChosenProvider });
+        }
+
+        public ActionResult TwoFactor(string provider)
+        {
+            return View(new TwoFactorViewModel { Provider = provider });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> TwoFactor(TwoFactorViewModel model)
+        {
+            var signInStatus = await SignInManager.TwoFactorSignInAsync(model.Provider, model.Code, true, false);
+
+            switch (signInStatus)
+            {
+                case SignInStatus.Success:
+                    return RedirectToAction("Index", "Home");
+                default:
+                    ModelState.AddModelError("", "Invalid Credentials");
+                    return View(model);
+            }
+        }
+
+
     }
 }

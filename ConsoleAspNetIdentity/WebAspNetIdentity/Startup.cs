@@ -4,6 +4,8 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security.Cookies;
 using Owin;
+using System;
+using WebAspNetIdentity.Services;
 
 [assembly: OwinStartup(typeof(WebAspNetIdentity.Startup))]
 
@@ -22,9 +24,20 @@ namespace WebAspNetIdentity
             app.CreatePerOwinContext<UserStore<IdentityUser>>((opt, cont) =>
                 new UserStore<IdentityUser>(cont.Get<IdentityDbContext>()));
             app.CreatePerOwinContext<UserManager<IdentityUser>>(
-                (opt, cont) => new UserManager<IdentityUser>(cont.Get<UserStore<IdentityUser>>()));
+                (opt, cont) =>
+                {
+                    var usermanager = new UserManager<IdentityUser>(cont.Get<UserStore<IdentityUser>>());
+                    usermanager.RegisterTwoFactorProvider("SMS", new PhoneNumberTokenProvider<IdentityUser> { MessageFormat = "Token: {0}" });
+                    usermanager.SmsService = new SmsService();
+                    usermanager.UserTokenProvider = new DataProtectorTokenProvider<IdentityUser, string>(opt.DataProtectionProvider.Create());
+                    usermanager.EmailService=new EmailService();
+
+                    return usermanager;
+                });
+
             app.CreatePerOwinContext<SignInManager<IdentityUser, string>>(
                 (opt, cont) => new SignInManager<IdentityUser, string>(cont.Get<UserManager<IdentityUser>>(), cont.Authentication));
+
 
             //For extended user, defaults are changed 
             //************************************************************************************************************************
@@ -41,6 +54,10 @@ namespace WebAspNetIdentity
             {
                 AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
             });
+
+            app.UseTwoFactorSignInCookie(DefaultAuthenticationTypes.TwoFactorCookie, TimeSpan.FromMinutes(5));
+
+
 
         }
     }

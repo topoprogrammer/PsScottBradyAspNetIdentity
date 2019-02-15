@@ -1,0 +1,15 @@
+﻿@model WebAspNetIdentity.Controllers.TwoFactorViewModel
+
+@{
+    ViewBag.Title = "TwoFactor";
+}
+
+<h1>Two Factor Authentication</h1>
+<hr />
+@using (Html.BeginForm("TwoFactor", "Account", FormMethod.Post))
+{
+    @Html.HiddenFor(h => h.Provider)
+    <p>Code: @Html.TextBoxFor(h => h.Code)</p>
+    <input class="btn" value="Submit" type="submit" />
+}
+
