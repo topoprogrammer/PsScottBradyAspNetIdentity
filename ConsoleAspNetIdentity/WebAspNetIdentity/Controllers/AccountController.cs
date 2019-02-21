@@ -1,21 +1,24 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
+using Microsoft.Owin.Security;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using System.Xml;
 
 namespace WebAspNetIdentity.Controllers
 {
     public class AccountController : Controller
     {
+        //This logic moves becuase of simple injector dependency resolver
+        //*********************************************************************************************************************************
         public UserManager<IdentityUser> UserManager =>
             HttpContext.GetOwinContext().Get<UserManager<IdentityUser>>();
 
         public SignInManager<IdentityUser, string> SignInManager =>
             HttpContext.GetOwinContext().Get<SignInManager<IdentityUser, string>>();
+        //*********************************************************************************************************************************
 
         //For extended user
         //*****************************************************************************
@@ -25,6 +28,53 @@ namespace WebAspNetIdentity.Controllers
         //public SignInManager<ExtendedUser, string> SignInManager =>
         //    HttpContext.GetOwinContext().Get<SignInManager<ExtendedUser, string>>();
         //*****************************************************************************
+
+        //To use simple dependency resolver uncomment this method
+        //*********************************************************************************************************************************
+        //public UserManager<IdentityUser, string> UserManager;
+        //public SignInManager<IdentityUser, string> SignInManager;
+
+        //public AccountController(UserManager<IdentityUser, string> userManager,
+        //    SignInManager<IdentityUser, string> signInManager)
+        //{
+        //    UserManager = userManager;
+        //    SignInManager = signInManager;
+        //}
+        //*********************************************************************************************************************************
+
+        public ActionResult ExternalAuthentication(string provider)
+        {
+            SignInManager.AuthenticationManager.Challenge(
+                new AuthenticationProperties
+                {
+                    RedirectUri = Url.Action("ExternalCallback", new { provider })
+                }, provider);
+
+            return new HttpUnauthorizedResult();
+        }
+
+        public async Task<ActionResult> ExternalCallback(string provider)
+        {
+            var loginInfo = await SignInManager.AuthenticationManager.GetExternalLoginInfoAsync();
+            var signiStatus = await SignInManager.ExternalSignInAsync(loginInfo, true);
+
+            switch (signiStatus)
+            {
+                case SignInStatus.Success:
+                    return RedirectToAction("Index", "Home");
+                default:
+                    var user = await UserManager.FindByEmailAsync(loginInfo.Email);
+                    if (user != null)
+                    {
+                        var result = await UserManager.AddLoginAsync(user.Id, loginInfo.Login);
+                        if (result.Succeeded)
+                        {
+                            return await ExternalCallback(provider);
+                        }
+                    }
+                    return View("Error");
+            }
+        }
 
         public ActionResult Register()
         {
@@ -45,6 +95,13 @@ namespace WebAspNetIdentity.Controllers
                 return RedirectToAction("Index", "Home");
             }
             //*****************************************************************************
+
+            var result = await UserManager.PasswordValidator.ValidateAsync(model.Password);
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError("", result.Errors.FirstOrDefault());
+                return View(model);
+            }
 
 
             var identityUser = new IdentityUser(model.UserName) { Email = model.UserName };
@@ -113,6 +170,17 @@ namespace WebAspNetIdentity.Controllers
                     //********************************************************************************************
                     return RedirectToAction("ChooseProvider");
                 //********************************************************************************************
+                case SignInStatus.LockedOut:
+                    var user = await UserManager.FindByNameAsync(model.UserName);
+                    if (user != null && await UserManager.CheckPasswordAsync(user, model.Password))
+                    {
+                        // Reaveal the account is locked just when user enters valid credentials.
+                        //***********************************************************************
+                        ModelState.AddModelError("", "Account Locked");
+                        return View(model);
+                    }
+                    ModelState.AddModelError("", "Invalid Credentials");
+                    return View(model);
                 default:
                     ModelState.AddModelError("", "Invalid Credentials");
                     return View(model);
@@ -152,6 +220,43 @@ namespace WebAspNetIdentity.Controllers
                     ModelState.AddModelError("", "Invalid Credentials");
                     return View(model);
             }
+        }
+
+        public ActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            var user = await UserManager.FindByNameAsync(model.Username);
+
+            if (user != null)
+            {
+                var token = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
+                var resetUrl = Url.Action("PasswordReset", "Account", new { userid = user.Id, token = token }, Request.Url.Scheme);
+                await UserManager.SendEmailAsync(user.Id, "Password Reset", $"Use link to reset password: {resetUrl}");
+            }
+            return RedirectToAction("Index", "Home");
+        }
+
+        public ActionResult PasswordReset(string userid, string token)
+        {
+            return View(new PasswordResetViewModel { UserId = userid, Token = token });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> PasswordReset(PasswordResetViewModel model)
+        {
+            var identityResult = await UserManager.ResetPasswordAsync(model.UserId, model.Token, model.Password);
+
+            if (!identityResult.Succeeded)
+            {
+                return View("Error");
+            }
+
+            return RedirectToAction("Index", "Home");
         }
 
 

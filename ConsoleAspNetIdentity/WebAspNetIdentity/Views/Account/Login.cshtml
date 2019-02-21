@@ -1,4 +1,5 @@
-﻿@model WebAspNetIdentity.Controllers.LoginViewModel
+﻿@using Microsoft.Owin.Security
+@model WebAspNetIdentity.Controllers.LoginViewModel
 
 @{
     ViewBag.Title = "Login";
@@ -15,3 +16,22 @@
     <br />
     <input class="btn" type="submit" value="Login" />
 }
+@Html.ActionLink("Forgot Password?", "ForgotPassword")
+
+@{
+    var providers = Context.GetOwinContext().Authentication.GetExternalAuthenticationTypes();
+
+    if (providers != null && providers.Any())
+    {
+        using (Html.BeginForm("ExternalAuthentication", "Account", FormMethod.Post))
+        {
+            foreach (var provider in providers)
+            {
+                <button class="btn" value="@provider.AuthenticationType" name="provider" type="submit">
+                    @provider.Caption
+                </button>
+            }
+        }
+    }
+}
+

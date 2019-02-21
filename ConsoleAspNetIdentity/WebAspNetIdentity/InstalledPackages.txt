@@ -3,3 +3,5 @@ install-package Microsoft.AspNet.Identity.Entityframework
 install-package Microsoft.Owin.Host.SystemWeb
 install-package Microsoft.Owin.Security.Cookies
 install-package twilio
+install-package Microsoft.Owin.Security.Google
+install-package SimpleInjector.Integration.Web.Mvc

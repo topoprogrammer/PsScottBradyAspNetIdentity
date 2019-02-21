@@ -1,0 +1,5 @@
+﻿Que funcione Twilio y Google oAuth y E Mail confirmation
+Pruebas generales
+ConfigurationManager for gooogle id and secret y twilio token and SID
+Last commit and push
+
