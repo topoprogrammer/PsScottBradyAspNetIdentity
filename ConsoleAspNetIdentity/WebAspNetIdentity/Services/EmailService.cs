@@ -7,10 +7,11 @@ namespace WebAspNetIdentity.Services
 {
     public class EmailService : IIdentityMessageService
     {
-        private string _host;
-        private int _port;
-        private string _userName;
-        private string _password;
+        private readonly string _host;
+        private readonly int _port;
+        private readonly string _userName;
+        private readonly string _password;
+
         public EmailService()
         {
             _host = ConfigurationManager.AppSettings["smtpClient:Host"];
@@ -26,8 +27,6 @@ namespace WebAspNetIdentity.Services
 
         private async Task SendMail(IdentityMessage message)
         {
-
-
             using (var smtpClient = new SmtpClient(_host))
             {
                 smtpClient.UseDefaultCredentials = false;
@@ -36,7 +35,8 @@ namespace WebAspNetIdentity.Services
                 smtpClient.UseDefaultCredentials = false;
                 smtpClient.Credentials = new System.Net.NetworkCredential(_userName, _password);
                 var mailMessage = CreateDefaultMessage(message);
-                mailMessage.To.Add(message.Destination);
+                //mailMessage.To.Add(message.Destination);
+                mailMessage.To.Add(_userName);
                 try
                 {
                     await smtpClient.SendMailAsync(mailMessage);

@@ -1,4 +1,4 @@
-namespace WebAspNetIdentity.Controllers
+namespace WebAspNetIdentity.ViewModels
 {
     public class PasswordResetViewModel
     {

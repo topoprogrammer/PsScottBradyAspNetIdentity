@@ -197,16 +197,16 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
-    <Compile Include="Controllers\ChoosePoviderViewModel.cs" />
-    <Compile Include="Controllers\ForgotPasswordViewModel.cs" />
+    <Compile Include="ViewModels\ChoosePoviderViewModel.cs" />
+    <Compile Include="ViewModels\ForgotPasswordViewModel.cs" />
     <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Controllers\PasswordResetViewModel.cs" />
-    <Compile Include="Controllers\TwoFactorViewModel.cs" />
+    <Compile Include="ViewModels\PasswordResetViewModel.cs" />
+    <Compile Include="ViewModels\TwoFactorViewModel.cs" />
     <Compile Include="IdentityExtensions\AddressModel.cs" />
     <Compile Include="IdentityExtensions\ExtendendUser.cs" />
     <Compile Include="IdentityExtensions\ExtendendUserDbContext.cs" />
-    <Compile Include="Controllers\LoginViewModel.cs" />
-    <Compile Include="Controllers\RegisterViewModel.cs" />
+    <Compile Include="ViewModels\LoginViewModel.cs" />
+    <Compile Include="ViewModels\RegisterViewModel.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
